@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Aggiungi Prodotto</h1>
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div>
+        {{ form.nome.label }} {{ form.nome }}
+    </div>
+    <div>
+        {{ form.quantita.label }} {{ form.quantita }}
+    </div>
+    <div>
+        {{ form.scadenza.label }} {{ form.scadenza }}
+    </div>
+    <div>
+        {{ form.lotto.label }} {{ form.lotto }}
+    </div>
+    <button type="submit">Aggiungi</button>
+</form>
+{% endblock %}
