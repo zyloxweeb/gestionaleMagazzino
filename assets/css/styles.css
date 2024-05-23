@@ -1,0 +1,16 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+.red { background-color: #f8d7da; }
+.yellow { background-color: #fff3cd; }
+.green { background-color: #d4edda; }
+
+.container {
+    margin-top: 50px;
+}
+
+.table img {
+    width: 50px;
+    height: auto;
+}
