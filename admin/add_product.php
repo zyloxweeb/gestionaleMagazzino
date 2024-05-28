@@ -4,7 +4,7 @@ if ($_SESSION['role'] !== 'admin') {
     header('Location: ../index.php');
     exit;
 }
-require '../includes/config.php';
+include '../includes/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
