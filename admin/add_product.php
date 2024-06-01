@@ -1,11 +1,15 @@
 <?php
 include '../includes/header.php';
+
+// Verifica ruolo amministratore
 if ($_SESSION['role'] !== 'admin') {
     header('Location: ../index.php');
     exit;
 }
+
 include '../includes/config.php';
 
+$error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
@@ -20,32 +24,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $price = number_format($price, 2, '.', '');
 
     // Gestione dell'immagine
-    $image = $_FILES['image']['name'];
-    $target_dir = "../assets/images/";
-    $target_file = $target_dir . basename($image);
-    move_uploaded_file($_FILES['image']['tmp_name'], $target_file);
+    if ($_FILES['image']['error'] == 0) {
+        $image = $_FILES['image']['name'];
+        $target_dir = "../assets/images/";
+        $target_file = $target_dir . basename($image);
+        if (move_uploaded_file($_FILES['image']['tmp_name'], $target_file)) {
+            // Prepara la query
+            $stmt = $conn->prepare("INSERT INTO products (name, expiry_date, lot_number, image, quantity, price, type, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("sssisdsi", $name, $expiry_date, $lot_number, $image, $quantity, $price, $type, $category_id);
 
-    // Prepara la query
-    $stmt = $conn->prepare("INSERT INTO products (name, expiry_date, lot_number, image, quantity, price, type, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("sssisdsi", $name, $expiry_date, $lot_number, $image, $quantity, $price, $type, $category_id);
-
-    // Esegui la query
-    if ($stmt->execute()) {
-        echo "Prodotto inserito con successo.";
+            // Esegui la query
+            if ($stmt->execute()) {
+                $success = "Prodotto inserito con successo.";
+            } else {
+                $error = "Errore durante l'inserimento del prodotto: " . $stmt->error;
+            }
+            $stmt->close();
+        } else {
+            $error = "Errore nel caricamento dell'immagine.";
+        }
     } else {
-        echo "Errore durante l'inserimento del prodotto: " . $stmt->error;
+        $error = "Errore nell'upload dell'immagine.";
     }
-    
-    $categories = $conn->query("SELECT * FROM categories");
-    $stmt->close();
-    $conn->close();
 }
 
-
+$categories = $conn->query("SELECT * FROM categories");
+$conn->close();
 ?>
 
 <h1>Aggiungi Prodotto</h1>
-<?php if (isset($error)) { echo "<div class='alert alert-danger'>$error</div>"; } ?>
+<?php if (!empty($error)) { echo "<div class='alert alert-danger'>$error</div>"; } ?>
+<?php if (!empty($success)) { echo "<div class='alert alert-success'>$success</div>"; } ?>
 <form method="post" enctype="multipart/form-data">
     <div class="form-group">
         <label for="name">Nome</label>
