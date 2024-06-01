@@ -1,49 +1,65 @@
 <?php
-session_start();
 require '../includes/config.php';
 
-if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
-    header('Location: ../auth/login.php');
-    exit;
-}
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
 
-$product_id = $_GET['id'];
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'];
-    $expiry_date = $_POST['expiry_date'];
-    $lot_number = $_POST['lot_number'];
-    $image = $_POST['image'];  // In a real application, handle file uploads properly
-    $quantity = $_POST['quantity'];
-    $price = $_POST['price'];
-    $type = $_POST['type'];
-    $category_id = $_POST['category_id'];
-
-    $stmt = $conn->prepare("UPDATE products SET name = ?, expiry_date = ?, lot_number = ?, image = ?, quantity = ?, price = ?, type = ?, category_id = ? WHERE id = ?");
-    $stmt->bind_param("ssssiisii", $name, $expiry_date, $lot_number, $image, $quantity, $price, $type, $category_id, $product_id);
-
-    if ($stmt->execute()) {
-        header('Location: manage_products.php');
-        exit;
-    } else {
-        $error = 'Errore nell\'aggiornamento del prodotto.';
-    }
-} else {
+    // Prepara la query per ottenere i dettagli del prodotto
     $stmt = $conn->prepare("SELECT * FROM products WHERE id = ?");
-    $stmt->bind_param("i", $product_id);
+    $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
     $product = $result->fetch_assoc();
-
+    
     if (!$product) {
-        header('Location: manage_products.php');
+        echo "Prodotto non trovato.";
         exit;
     }
-}
 
-$stmt = $conn->prepare("SELECT id, name FROM categories");
-$stmt->execute();
-$categories = $stmt->get_result();
+    $stmt->close();
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
+    $id = intval($_POST['id']);
+    $name = $_POST['name'];
+    $expiry_date = $_POST['expiry_date'];
+    $lot_number = $_POST['lot_number'];
+    $quantity = intval($_POST['quantity']);
+    $price = floatval($_POST['price']);
+    $type = $_POST['type'];
+    $category_id = intval($_POST['category_id']);
+
+    // Formatta il prezzo
+    $price = number_format($price, 2, '.', '');
+
+    // Gestione dell'immagine
+    if ($_FILES['image']['name']) {
+        $image = $_FILES['image']['name'];
+        $target_dir = "assets/images/";
+        $target_file = $target_dir . basename($image);
+        move_uploaded_file($_FILES['image']['tmp_name'], $target_file);
+
+        // Prepara la query con l'immagine aggiornata
+        $stmt = $conn->prepare("UPDATE products SET name = ?, expiry_date = ?, lot_number = ?, image = ?, quantity = ?, price = ?, type = ?, category_id = ? WHERE id = ?");
+        $stmt->bind_param("sssisdsi", $name, $expiry_date, $lot_number, $image, $quantity, $price, $type, $category_id, $id);
+    } else {
+        // Prepara la query senza aggiornare l'immagine
+        $stmt = $conn->prepare("UPDATE products SET name = ?, expiry_date = ?, lot_number = ?, quantity = ?, price = ?, type = ?, category_id = ? WHERE id = ?");
+        $stmt->bind_param("sssisdsi", $name, $expiry_date, $lot_number, $quantity, $price, $type, $category_id, $id);
+    }
+
+    // Esegui la query
+    if ($stmt->execute()) {
+        header("Location: manage_products.php");
+        exit;
+    } else {
+        echo "Errore durante l'aggiornamento del prodotto: " . $stmt->error;
+    }
+
+    $stmt->close();
+    $conn->close();
+} else {
+    echo "Richiesta non valida.";
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -52,54 +68,61 @@ $categories = $stmt->get_result();
     <meta charset="UTF-8">
     <title>Modifica Prodotto</title>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="../assets/css/styles.css" rel="stylesheet">
 </head>
 <body>
     <?php include '../includes/header.php'; ?>
-    <div class="container mt-4">
+    <div class="container">
         <h2>Modifica Prodotto</h2>
-        <?php if (isset($error)): ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
-        <?php endif; ?>
-        <form action="edit_product.php?id=<?php echo $product_id; ?>" method="post">
+        <form action="edit_product.php" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="id" value="<?php echo $product['id']; ?>">
             <div class="form-group">
-                <label for="name">Nome</label>
-                <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($product['name']); ?>" required>
+                <label for="name">Nome:</label>
+                <input type="text" class="form-control" id="name" name="name" value="<?php echo htmlspecialchars($product['name'], ENT_QUOTES); ?>" required>
             </div>
             <div class="form-group">
-                <label for="expiry_date">Data di Scadenza</label>
-                <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="<?php echo htmlspecialchars($product['expiry_date']); ?>" required>
+                <label for="expiry_date">Data di Scadenza:</label>
+                <input type="date" class="form-control" id="expiry_date" name="expiry_date" value="<?php echo $product['expiry_date']; ?>">
             </div>
             <div class="form-group">
-                <label for="lot_number">Numero di Lotto</label>
-                <input type="text" class="form-control" id="lot_number" name="lot_number" value="<?php echo htmlspecialchars($product['lot_number']); ?>" required>
+                <label for="lot_number">Numero di Lotto:</label>
+                <input type="text" class="form-control" id="lot_number" name="lot_number" value="<?php echo htmlspecialchars($product['lot_number'], ENT_QUOTES); ?>">
             </div>
             <div class="form-group">
-                <label for="image">Immagine</label>
-                <input type="text" class="form-control" id="image" name="image" value="<?php echo htmlspecialchars($product['image']); ?>" required>
+                <label for="quantity">Quantità:</label>
+                <input type="number" class="form-control" id="quantity" name="quantity" value="<?php echo $product['quantity']; ?>" required>
             </div>
             <div class="form-group">
-                <label for="quantity">Quantità</label>
-                <input type="number" class="form-control" id="quantity" name="quantity" value="<?php echo htmlspecialchars($product['quantity']); ?>" required>
+                <label for="price">Prezzo:</label>
+                <input type="number" step="0.01" class="form-control" id="price" name="price" value="<?php echo $product['price']; ?>" required>
             </div>
             <div class="form-group">
-                <label for="price">Prezzo</label>
-                <input type="number" step="0.01" class="form-control" id="price" name="price" value="<?php echo htmlspecialchars($product['price']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="type">Tipologia</label>
-                <input type="text" class="form-control" id="type" name="type" value="<?php echo htmlspecialchars($product['type']); ?>" required>
-            </div>
-            <div class="form-group">
-                <label for="category_id">Categoria</label>
-                <select class="form-control" id="category_id" name="category_id" required>
-                    <?php while ($category = $categories->fetch_assoc()): ?>
-                        <option value="<?php echo $category['id']; ?>" <?php echo $category['id'] == $product['category_id'] ? 'selected' : ''; ?>>
-                            <?php echo htmlspecialchars($category['name']); ?>
-                        </option>
-                    <?php endwhile; ?>
+                <label for="type">Tipo:</label>
+                <select class="form-control" id="type" name="type" required>
+                    <option value="bottiglia" <?php if ($product['type'] === 'bottiglia') echo 'selected'; ?>>Bottiglia</option>
+                    <option value="lattina" <?php if ($product['type'] === 'lattina') echo 'selected'; ?>>Lattina</option>
+                    <option value="fusto" <?php if ($product['type'] === 'fusto') echo 'selected'; ?>>Fusto</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+            <div class="form-group">
+                <label for="category_id">Categoria:</label>
+                <select class="form-control" id="category_id" name="category_id" required>
+                    <?php
+                    $categories = $conn->query("SELECT * FROM categories");
+                    while ($category = $categories->fetch_assoc()) {
+                        echo '<option value="' . $category['id'] . '"' . ($product['category_id'] == $category['id'] ? ' selected' : '') . '>' . htmlspecialchars($category['name'], ENT_QUOTES) . '</option>';
+                    }
+                    ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="image">Immagine:</label>
+                <input type="file" class="form-control-file" id="image" name="image">
+                <?php if ($product['image']): ?>
+                    <img src="uploads/<?php echo htmlspecialchars($product['image'], ENT_QUOTES); ?>" alt="<?php echo htmlspecialchars($product['name'], ENT_QUOTES); ?>" style="max-width: 200px;">
+                <?php endif; ?>
+            </div>
+            <button type="submit" class="btn btn-primary">Salva</button>
         </form>
     </div>
     <?php include '../includes/footer.php'; ?>

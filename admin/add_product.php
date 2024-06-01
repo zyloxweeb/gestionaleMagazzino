@@ -6,31 +6,42 @@ if ($_SESSION['role'] !== 'admin') {
 }
 include '../includes/config.php';
 
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name = $_POST['name'];
     $expiry_date = $_POST['expiry_date'];
     $lot_number = $_POST['lot_number'];
-    $quantity = $_POST['quantity'];
-    $price = $_POST['price'];
+    $quantity = intval($_POST['quantity']);
+    $price = floatval($_POST['price']);
     $type = $_POST['type'];
-    $category_id = $_POST['category_id'];
+    $category_id = intval($_POST['category_id']);
 
+    // Formatta il prezzo
+    $price = number_format($price, 2, '.', '');
+
+    // Gestione dell'immagine
     $image = $_FILES['image']['name'];
-    $target = "../assets/images/".basename($image);
+    $target_dir = "../assets/images/";
+    $target_file = $target_dir . basename($image);
+    move_uploaded_file($_FILES['image']['tmp_name'], $target_file);
 
-    $sql = "INSERT INTO products (name, expiry_date, lot_number, image, quantity, price, type, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param('ssssdsii', $name, $expiry_date, $lot_number, $image, $quantity, $price, $type, $category_id);
-    
-    if ($stmt->execute() && move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
-        header('Location: manage_products.php');
-        exit;
+    // Prepara la query
+    $stmt = $conn->prepare("INSERT INTO products (name, expiry_date, lot_number, image, quantity, price, type, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("sssisdsi", $name, $expiry_date, $lot_number, $image, $quantity, $price, $type, $category_id);
+
+    // Esegui la query
+    if ($stmt->execute()) {
+        echo "Prodotto inserito con successo.";
     } else {
-        $error = "Errore nell'inserimento del prodotto";
+        echo "Errore durante l'inserimento del prodotto: " . $stmt->error;
     }
+    
+    $categories = $conn->query("SELECT * FROM categories");
+    $stmt->close();
+    $conn->close();
 }
 
-$categories = $conn->query("SELECT * FROM categories");
+
 ?>
 
 <h1>Aggiungi Prodotto</h1>
