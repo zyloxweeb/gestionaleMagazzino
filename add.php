@@ -2,12 +2,12 @@
 require 'includes/config.php';
 
 // Dati dell'utente
-$username = 'admin';
-$password = 'admin';
+$username = 'user';
+$password = 'user';
 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
 
 // Query di inserimento
-$sql = "INSERT INTO users (username, password, role) VALUES (?, ?, 'admin')";
+$sql = "INSERT INTO users (username, password, role) VALUES (?, ?, 'user')";
 $stmt = $conn->prepare($sql);
 
 if ($stmt) {

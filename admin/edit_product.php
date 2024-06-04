@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
                 <label for="image">Immagine:</label>
                 <input type="file" class="form-control-file" id="image" name="image">
                 <?php if ($product['image']): ?>
-                    <img src="uploads/<?php echo htmlspecialchars($product['image'], ENT_QUOTES); ?>" alt="<?php echo htmlspecialchars($product['name'], ENT_QUOTES); ?>" style="max-width: 200px;">
+                    <img src="../assets/images/<?php echo htmlspecialchars($product['image'], ENT_QUOTES); ?>" alt="<?php echo htmlspecialchars($product['name'], ENT_QUOTES); ?>" style="max-width: 200px;">
                 <?php endif; ?>
             </div>
             <button type="submit" class="btn btn-primary">Salva</button>

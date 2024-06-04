@@ -58,7 +58,7 @@ $products = $stmt->get_result();
                         <td><?php echo htmlspecialchars($product['name']); ?></td>
                         <td><?php echo htmlspecialchars($product['expiry_date']); ?></td>
                         <td><?php echo htmlspecialchars($product['lot_number']); ?></td>
-                        <td><img src="<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" style="width: 50px;"></td>
+                        <td><img src="../assets/images/<?php echo htmlspecialchars($product['image']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" style="width: 50px;"></td>
                         <td><?php echo htmlspecialchars($product['quantity']); ?></td>
                         <td><?php echo htmlspecialchars($product['price']); ?></td>
                         <td><?php echo htmlspecialchars($product['type']); ?></td>
