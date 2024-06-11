@@ -20,6 +20,7 @@ $base_path = '/5BIA/gestionaleMagazzino/'; // Specifica il percorso base del tuo
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?php echo $base_url . $base_path; ?>assets/css/styles.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
     <script src="<?php echo $base_url . $base_path; ?>assets/js/scripts.js"></script>
 </head>
 <body>

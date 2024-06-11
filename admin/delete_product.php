@@ -6,6 +6,9 @@ if ($_SESSION['role'] !== 'admin') {
 }
 include '../includes/config.php';
 
+$message = '';
+$message_type = '';
+
 if (isset($_GET['id'])) {
     $product_id = intval($_GET['id']);
 
@@ -15,18 +18,21 @@ if (isset($_GET['id'])) {
 
     // Esegui la query
     if ($stmt->execute()) {
-        echo "<div class='alert alert-success'>Prodotto eliminato con successo.</div>";
+        $message = "Prodotto eliminato con successo.";
+        $message_type = "success";
     } else {
-        echo "<div class='alert alert-danger'>Errore durante l'eliminazione del prodotto: " . $stmt->error . "</div>";
+        $message = "Errore durante l'eliminazione del prodotto: " . $stmt->error;
+        $message_type = "danger";
     }
 
     $stmt->close();
 } else {
-    echo "<div class='alert alert-danger'>ID del prodotto non fornito.</div>";
+    $message = "ID del prodotto non fornito.";
+    $message_type = "danger";
 }
 
 $conn->close();
 
-header('Location: manage_products.php');
+header("Location: manage_products.php?message=$message&message_type=$message_type");
 exit;
 ?>
